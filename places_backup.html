@@ -1,0 +1,1190 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.0/moment.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+   <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAekYlqaW3a33-jdEoVjriqOd9901K9r_g&libraries=places"></script>
+   <script type="text/javascript" async src="https://platform.twitter.com/widgets.js"></script> 
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/rateYo/2.3.2/jquery.rateyo.min.css">
+   <script src=https://cdn.jsdelivr.net/npm/jquery-validation@1.17.0/dist/jquery.validate.min.js> </script>
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/rateYo/2.3.2/jquery.rateyo.min.js"></script>
+
+    <script type="text/javascript"> 
+    GlobRowID="";
+    myMapFlag=true;
+    yelpReview="";
+    pageIndex=0;
+    myPlacesData=[];
+    myPlacesData[0]=-1;
+    myPlacesData[1]=-1;
+    myPlacesData[2]=-1;
+    GlobLat="";
+    GlobLong="";
+    rowSelectFlag=true;
+    favId=0;
+    GlobLat2="";
+    GlobLong2="";
+    FROMWHEREHAVEICOME=true;
+    function goBack(){
+        document.getElementById("goBack").onclick=function(){
+    if(FROMWHEREHAVEICOME==true){
+      reMakeHTML(data1);
+      document.getElementById(GlobRowID).setAttribute("class","table-warning");
+      document.getElementById("detailButton").disabled=false;
+      document.getElementById("detailButton").onclick=function(){
+        launchDetails(myID,GlobRowID,GlobLat,GlobLong);
+      }
+    }
+    else{
+      setFavTable();
+       document.getElementById(GlobRowID).setAttribute("class","table-warning");
+      document.getElementById("detailButton").disabled=false;
+      document.getElementById("detailButton").onclick=function(){
+        launchDetails(myID,GlobRowID,GlobLat,GlobLong);
+      }
+
+    }
+  }
+    }
+
+    function  callRateYo(myRating) {
+ 
+  $("#rateYo").rateYo({
+    rating: myRating,
+    normalFill:"#FFFFFF",
+    readOnly: true,
+    starWidth: "15px"
+  });
+}
+    function  callRateYo2(myRating) {
+ 
+  $(".rateYo").rateYo({
+    rating: myRating,
+    normalFill:"#FFFFFF",
+    readOnly: true,
+    starWidth: "15px"
+  });
+} 
+
+    function myNavBar(){
+      html_text="";
+  document.getElementById("myTable").innerHTML=html_text;
+  html_text+='<h1 class="h1 text-center">'+myPlaces.name+'</h1>';
+  html_text+='<button id="goBack" class="btn btn-default float-left"><i class="fa fa-angle-left" style="font-size:18px"></i>List</button>';
+  html_text+='<button id='+myID+' class="btn btn-default float-right" shaded="false" onclick="toggleStar(myID,'+GlobLat+','+GlobLong+')"><i class="fa fa-star-o" style="font-size:18px"></i></button><br>'
+  html_text+='<button id="tweetButton" class="btn btn-default float-right" onclick="myTweet(myPlaces)"><img src="http://cs-server.usc.edu:45678/hw/hw8/images/Twitter.png" width="20" /></button><br>'
+  html_text+='<ul class="nav justify-content-end"><li class="nav-item"><a class="nav-link active" onClick="launchDetails(myID,'+GlobRowID+','+GlobLat+','+GlobLong+');" id="launchButton">Info</a></li><li class="nav-item"><a class="nav-link" onClick="photoMaker(myPlaces,'+GlobLat+','+GlobLong+');" id="picButton">Photos</a></li><li class="nav-item"><a class="nav-link" onClick="mapMaker(myPlaces,'+GlobLat+','+GlobLong+');" id="mapButton">Map</a></li><li class="nav-item"><a class="nav-link active" onClick="reviewMaker(myPlaces,'+GlobLat+','+GlobLong+');" id="reviewButton">Reviews</a></li></ul>';
+  return html_text;
+    }
+
+    function yelpSort(yelpReviews,myVal,dLat,dLong){
+       
+        html_text=myNavBar();
+        html_text+='<select id="googleOrYelp" class="form-control"><option  selected  value="googleReview">Google Reviews</option><option  value="yelpReview">Yelp Reviews</option></select>';
+        html_text+='<select id="reviewMode" class="form-control"><option value="default">Default Order</option><option  value="highestRating">Highest Rating</option><option  value="lowestRating">Lowest Rating</option><option  value="mostRecent">Most recent</option></option><option  value="leastRecent">Least recent</option></select>';
+         html_text+="<table class='table' border=\"1px\">"; 
+        if(myVal=="default"){
+
+        } 
+        if(myVal=="lowestRating"){
+          yelpReviews.sort(function(a,b) {return parseFloat(a.rating) - parseFloat(b.rating);});
+
+        }
+         if(myVal=="highestRating"){
+          yelpReviews.sort(function(a,b) {return parseFloat(b.rating) - parseFloat(a.rating);});
+          
+        }
+         if(myVal=="mostRecent"){
+          yelpReviews.sort(function(a,b) {return parseFloat(b.time_created) - parseFloat(a.time_created);});
+          
+        }
+         if(myVal=="leastRecent"){
+          yelpReviews.sort(function(a,b) {return parseFloat(a.time_created) - parseFloat(b.time_created);});
+          
+        }
+   for(var i=0;i<yelpReviews.length;i++){
+            authorName=yelpReviews[i].user.name;
+            authorURL=yelpReviews[i].url;
+            profilePhoto=yelpReviews[i].user.image_url;
+            authorRating=yelpReviews[i].rating;
+            authorContent=yelpReviews[i].text;
+            authorTime=yelpReviews[i].time_created;
+            html_text+='<tr><a href='+authorURL+'><img src='+profilePhoto+'></a><a href='+authorURL+'><h5 class="h5">'+authorName+'</h3></a><p>'+authorRating+'<div style=\"\" class=\"rateYo\"></div></p><p>'+authorTime+'</p><p>'+authorContent+'</p></tr>';   
+              callRateYo2(authorRating);
+          }
+           html_text+="</table>";
+           document.getElementById("myTable").innerHTML=html_text;
+           document.getElementById("googleOrYelp").value="yelpReview";
+           document.getElementById("reviewMode").value=myVal;
+          document.getElementById("googleOrYelp").setAttribute("onchange",
+          'if(this.value=="googleReview"){reviewSort(myPlaces,document.getElementById("reviewMode").value,'+dLat+','+dLong+');}');
+        
+        document.getElementById("reviewMode").setAttribute("onchange",
+          'if(document.getElementById("googleOrYelp").value=="yelpReview"){yelpSort(yelpReviews,this.value)}'
+        );
+            for(var i=0;i<localStorage.length;i++){
+    if(localStorage.key(i)==place.place_id){
+      document.getElementById(place.place_id).setAttribute("shaded",true);
+      document.getElementById(place.place_id).innerHTML='<i class="fa fa-star" style="font-size:18px">';
+    }
+  }
+  goBack();
+
+    }
+    function yelpCall(place,myVal,dLat,dLong){
+      //alert(myVal);
+      placeName="",placeCity="",placeState="",placeCountry="";
+      yelpReview="";
+      placeName=place.name;
+      placeAddress=place.formatted_address;
+      if(place.address_components.length==8 || place.address_components.length==9)
+      {
+        if(place.address_components[3].long_name){
+          placeCity=place.address_components[3].long_name;}
+        if(place.address_components[5].short_name){
+          placeState=place.address_components[5].short_name;}
+        if(place.address_components[6].short_name){
+          placeCountry=place.address_components[6].short_name;}
+      }
+      else if(place.address_components.length==6)
+      {
+        if(place.address_components[0].long_name){
+          placeCity=place.address_components[0].long_name;}
+        if(place.address_components[3].short_name){
+          placeState=place.address_components[3].short_name;}
+        if(place.address_components[4].short_name){
+          placeCountry=place.address_components[4].short_name;}
+
+      }
+      else if(place.address_components.length==7)
+      {
+        if(place.address_components[2].long_name){
+          placeCity=place.address_components[2].long_name;}
+        if(place.address_components[4].short_name){
+          placeState=place.address_components[4].short_name;}
+        if(place.address_components[5].short_name){
+        placeCountry=place.address_components[5].short_name;}
+
+      }
+          $.ajax({
+        url : "/sendData3?placeName="+placeName+"&placeCity="+placeCity+"&placeState="+placeState+"&placeCountry="+placeCountry+"&placeAddress="+placeAddress,
+        type: "GET",
+        success:function(data,status,xhr){
+         yelpJson = jQuery.parseJSON(data);
+         yelpId=yelpJson.businesses[0].id;
+             $.ajax({
+        url : "/sendData4?yelpId="+yelpId,
+        type: "GET",
+        success:function(data,status,xhr){
+          yelpReview= jQuery.parseJSON(data);
+         // alert(yelpReview);
+        },
+          error: function(data, status, xhr) {
+        alert("error, status " + status );
+      }
+
+    });
+
+        },
+          error: function(data, status, xhr) {
+        alert("error, status " + status );
+      }
+
+    });
+        setTimeout(function(){ 
+
+        html_text=myNavBar();
+        html_text+='<select id="googleOrYelp" class="form-control"><option  selected  value="googleReview">Google Reviews</option><option  value="yelpReview">Yelp Reviews</option></select>';
+        html_text+='<select id="reviewMode" class="form-control"><option value="default">Default Order</option><option  value="highestRating">Highest Rating</option><option  value="lowestRating">Lowest Rating</option><option  value="mostRecent">Most recent</option></option><option  value="leastRecent">Least recent</option></select>';
+        html_text+="<table class='table' border=\"1px\">"; 
+       yelpReviews=yelpReview.reviews;
+       if(!yelpReviews){
+        html_text+='<div class="alert alert-warning" role="alert">No Yelp Reviews Found</div>';
+       document.getElementById("myTable").innerHTML=html_text;
+       document.getElementById("reviewMode").value=myVal;
+       document.getElementById("googleOrYelp").value="yelpReview";
+       return;
+       }
+
+        for(var i=0;i<yelpReviews.length;i++){
+            authorName=yelpReviews[i].user.name;
+            authorURL=yelpReviews[i].url;
+            profilePhoto=yelpReviews[i].user.image_url;
+            authorRating=yelpReviews[i].rating;
+            authorContent=yelpReviews[i].text;
+            authorTime=yelpReviews[i].time_created;
+            html_text+='<tr><a href='+authorURL+'><img src='+profilePhoto+' ></a><a href='+authorURL+'><h5 class="h5">'+authorName+'</h3></a><p>'+authorRating+'<div style=\"\" class=\"rateYo\"></div></p><p>'+authorTime+'</p><p>'+authorContent+'</p></tr>';   
+              callRateYo2(authorRating);
+          }
+           html_text+="</table>";
+           document.getElementById("myTable").innerHTML=html_text;
+           document.getElementById("reviewMode").value=myVal;
+           document.getElementById("googleOrYelp").value="yelpReview";
+           yelpSort(yelpReviews,myVal,dLat,dLong);
+
+           document.getElementById("googleOrYelp").setAttribute("onchange",
+           'if(this.value=="yelpReview"){}else{reviewSort(myPlaces,myVal,'+dLat+','+dLong+')}');
+        
+         document.getElementById("reviewMode").setAttribute("onchange",
+           'if(document.getElementById("googleOrYelp").value=="googleReview")reviewSort(myPlaces,this.value,'+dLat+','+dLong+');else{yelpSort(yelpReviews,this.value,'+dLat+','+dLong+');}'
+        );
+
+
+         }, 3000);
+        
+    for(var i=0;i<localStorage.length;i++){
+    if(localStorage.key(i)==place.place_id){
+      document.getElementById(place.place_id).setAttribute("shaded",true);
+      document.getElementById(place.place_id).innerHTML='<i class="fa fa-star" style="font-size:18px">';
+    }
+  }
+  goBack();
+
+
+
+    }
+    function reviewSort(place,myVal,dLat,dLong){
+        myReviews=place.reviews;
+        html_text=myNavBar();
+        html_text+='<select id="googleOrYelp" class="form-control"><option  selected  value="googleReview">Google Reviews</option><option  value="yelpReview">Yelp Reviews</option></select>';
+        html_text+='<select id="reviewMode" class="form-control"><option value="default">Default Order</option><option  value="highestRating">Highest Rating</option><option  value="lowestRating">Lowest Rating</option><option  value="mostRecent">Most recent</option></option><option  value="leastRecent">Least recent</option></select>';
+         html_text+="<table class='table' border=\"1px\">"; 
+        if(myVal=="default"){
+
+        } 
+        if(myVal=="lowestRating"){
+          myReviews.sort(function(a,b) {return parseFloat(a.rating) - parseFloat(b.rating);});
+
+        }
+         if(myVal=="highestRating"){
+          myReviews.sort(function(a,b) {return parseFloat(b.rating) - parseFloat(a.rating);});
+          
+        }
+         if(myVal=="mostRecent"){
+          myReviews.sort(function(a,b) {return parseFloat(b.time) - parseFloat(a.time);});
+          
+        }
+         if(myVal=="leastRecent"){
+          myReviews.sort(function(a,b) {return parseFloat(a.time) - parseFloat(b.time);});
+          
+        }
+            for(var i=0;i<myReviews.length;i++){
+            authorName=myReviews[i].author_name;
+            authorURL=myReviews[i].author_url;
+            profilePhoto=myReviews[i].profile_photo_url;
+            authorRating=myReviews[i].rating;
+            authorContent=myReviews[i].text;
+            authorTime=myReviews[i].time;
+            authorTime=moment.unix(authorTime).format("YYYY-MM-DD h:mm:ss");
+            html_text+='<tr><a href='+authorURL+'><img src='+profilePhoto+' ></a><a href='+authorURL+'><h5 class="h5">'+authorName+'</h3></a><p>'+authorRating+'<div style=\"\" class=\"rateYo\"></div></p><p>'+authorTime+'</p><p>'+authorContent+'</p></tr>';  
+            callRateYo2(authorRating); 
+
+          }
+           html_text+="</table>";
+           document.getElementById("myTable").innerHTML=html_text;
+           document.getElementById("reviewMode").value=myVal;
+           document.getElementById("googleOrYelp").setAttribute("onchange",
+          'if(this.value=="yelpReview"){yelpCall(myPlaces,document.getElementById("reviewMode").value,'+dLat+','+dLong+'); }');
+        
+        document.getElementById("reviewMode").setAttribute("onchange",
+          'if(document.getElementById("googleOrYelp").value=="googleReview")reviewSort(myPlaces,this.value,'+dLat+','+dLong+');'
+        );
+            for(var i=0;i<localStorage.length;i++){
+    if(localStorage.key(i)==place.place_id){
+      document.getElementById(place.place_id).setAttribute("shaded",true);
+      document.getElementById(place.place_id).innerHTML='<i class="fa fa-star" style="font-size:18px">';
+    }
+  }
+  goBack();
+      
+    }
+    function reviewMaker(place,dLat,dLong){
+       myVal="default";
+       html_text=myNavBar();
+        html_text+='<select id="googleOrYelp" class="form-control"><option  selected  value="googleReview">Google Reviews</option><option  value="yelpReview">Yelp Reviews</option></select>';
+        html_text+='<select id="reviewMode" class="form-control"><option selected value="default">Default Order</option><option  value="highestRating">Highest Rating</option><option  value="lowestRating">Lowest Rating</option><option  value="mostRecent">Most recent</option></option><option  value="leastRecent">Least recent</option></select>';
+        document.getElementById("myTable").innerHTML=html_text;
+        html_text+="<table class='table' border=\"1px\">";
+        if(document.getElementById("googleOrYelp").value=="googleReview"){
+        myReviews=place.reviews;
+        if(!myReviews){
+          html_text+='<div class="alert alert-warning" role="alert">No Reviews Found</div>';
+          document.getElementById("myTable").innerHTML=html_text;  
+        }
+        if(myReviews[0]){
+        if(document.getElementById("reviewMode").value=="default"){
+          for(var i=0;i<myReviews.length;i++){
+            authorName=myReviews[i].author_name;
+            authorURL=myReviews[i].author_url;
+            profilePhoto=myReviews[i].profile_photo_url;
+            authorRating=myReviews[i].rating;
+            authorContent=myReviews[i].text;
+            authorTime=myReviews[i].time;
+            authorTime=moment.unix(authorTime).format("YYYY-MM-DD h:mm:ss");
+            html_text+="<tr><a href="+authorURL+"><img src="+profilePhoto+"><a href="+authorURL+"><h5 class=\"h5\">"+authorName+"</h3></a><p>"+authorRating+"<div style=\"\" class=\"rateYo\"></div></p><p>"+authorTime+"</p><p>"+authorContent+"</p></tr>";   
+              callRateYo2(authorRating);
+          }
+           html_text+="</table>";
+
+
+        }
+      }
+        document.getElementById("myTable").innerHTML=html_text;
+        document.getElementById("googleOrYelp").setAttribute("onchange",
+          'if(this.value=="yelpReview"){ yelpCall(myPlaces,"default"); }');
+        
+        document.getElementById("reviewMode").setAttribute("onchange",
+          'if(document.getElementById("googleOrYelp").value=="googleReview"){reviewSort(myPlaces,this.value,'+dLat+','+dLong+');}'
+        );
+      }
+
+          for(var i=0;i<localStorage.length;i++){
+    if(localStorage.key(i)==place.place_id){
+      document.getElementById(place.place_id).setAttribute("shaded",true);
+      document.getElementById(place.place_id).innerHTML='<i class="fa fa-star" style="font-size:18px">';
+    }
+  }
+  goBack();
+
+
+    }
+    function placeAutoComplete(element){
+      var defaultBounds = new google.maps.LatLngBounds(
+      new google.maps.LatLng(lat,lon),
+      new google.maps.LatLng(lat,lon));
+
+
+      var input = element;
+
+      var searchBox = new google.maps.places.SearchBox(input, {
+      bounds: defaultBounds
+      });
+
+}
+   
+    function toggleView(place,dLat,dLong){
+      myMapFlag=!myMapFlag;
+      if(myMapFlag==false){
+        initialize(place,dLat,dLong);
+      }
+      else{
+      initMap(place,dLat,dLong);
+      }
+    }
+     var panorama;
+      function initialize(place,dLat,dLong) {
+        panorama = new google.maps.StreetViewPanorama(
+            document.getElementById('map'),
+            {
+              position: {lat: dLat, lng: dLong},
+              pov: {heading: 165, pitch: 0},
+              zoom: 1
+            });
+     }
+    
+    function getDirections(place,dLat,dLong){
+      var directionsDisplay = new google.maps.DirectionsRenderer;
+      var directionsService = new google.maps.DirectionsService;
+       var selectedMode = document.getElementById('mode').value;
+      myRoutes="";
+       org= document.getElementById("from1").value;
+       org=""+org;
+       if(org=="My Location" ||org=="my location" ||org=="my Location" ||org=="My location"){
+        directionsService.route({
+          origin: {lat: sLat, lng: sLong} ,  // Haight.
+          destination: {lat: dLat, lng: dLong},
+          provideRouteAlternatives:true,   // Ocean Beach.
+          // Note that Javascript allows us to access the constant
+          // using square brackets and a string value as its
+          // "property."
+          travelMode: google.maps.TravelMode[selectedMode]
+        }, function(response, status) {
+          if (status == 'OK') {
+            myRoutes=directionsDisplay.setDirections(response);
+          } else {
+            window.alert('Directions request failed due to ' + status);
+          }
+        });
+       }
+       else{
+          directionsService.route({
+          origin: org,  // Haight.
+          destination: {lat: dLat, lng: dLong},
+          provideRouteAlternatives:true,  // Ocean Beach.
+          // Note that Javascript allows us to access the constant
+          // using square brackets and a string value as its
+          // "property."
+          travelMode: google.maps.TravelMode[selectedMode]
+        }, function(response, status) {
+          if (status == 'OK') {
+            myRoutes=response.routes;
+            //alert(myRoutes[0]);
+            directionsDisplay.setDirections(response);
+          } else {
+            window.alert('Directions request failed due to ' + status);
+          }
+        });
+        }
+
+    
+         var mapOptions = {
+          zoom: 14,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+          }
+
+         var map = new google.maps.Map(document.getElementById('map'), mapOptions);
+         directionsDisplay.setMap(map);
+         if(!document.getElementById("directionsPanel")){
+         directionsDisplay.setPanel(document.getElementById('directionsPanel'));
+          }
+          else{
+            document.getElementById("directionsPanel").innerHTML="";
+            directionsDisplay.setPanel(document.getElementById('directionsPanel')); 
+          } 
+    }
+    function initMap(place,dLat,dLong){
+        if(document.getElementById("here1").checked){
+          sLat=lat;
+          sLong=lon;
+          document.getElementById("from1").value="My Location";
+        }
+        else{
+          document.getElementById("from1").value=document.getElementById("location1").value;
+        }
+          document.getElementById("to1").value=place.name+","+place.formatted_address;
+          // dLat=place.geometry.location;
+          // dLong=place.geometry.location.lng;
+          // alert(dLat);
+          // alert(dLong);
+
+         var uluru = {lat: dLat, lng: dLong};
+             var map = new google.maps.Map(document.getElementById('map'), {
+               zoom: 15,
+               center: uluru,
+               mapTypeId: google.maps.MapTypeId.ROADMAP
+             });
+             var marker = new google.maps.Marker({
+             position: uluru,
+               map: map
+             });
+
+    }
+    function mapMaker(place,dLat,dLong){
+ 
+ html_text=myNavBar();
+  html_text+='<div class="form-group row"><label for="from" class="col-sm-2 col-form-label">From</label><div class="col-sm-10"><input type="text" class="form-control" name="from" id="from1" required="true"></div></div>';
+  html_text+='<div class="form-group row"><label for="to" class="col-sm-2 col-form-label">To</label><div class="col-sm-10"><input type="text" class="form-control" name="to" id="to1" required="true" disabled="true"></div></div>';
+  html_text+='<select id="mode" class="form-control"><option  value="DRIVING">DRIVING</option><option  value="WALKING">WALKING</option><option  value="BICYCLING">BICYCLING</option><option  value="TRANSIT">TRANSIT</option></select> ';
+  html_text+='<button onClick="getDirections(myPlaces,'+dLat+','+dLong+');" id="directionButton" type="button" class="btn btn-primary col-sm-2">Get Direction</button>';
+  html_text+='<button onClick="toggleView(myPlaces,'+dLat+','+dLong+');" id="pegButton" type="button" class="btn btn-primary col-sm-2">Street View</button>';
+  html_text+='<div style="width:100%;height:400px" class="container"  id="map"></div>';
+  html_text+='<div id="directionsPanel" class="container" style="width:100%;height 100%"></div>';
+  document.getElementById("myTable").innerHTML=html_text;
+  initMap(place,dLat,dLong);
+  document.getElementById("from1").setAttribute("onkeypress",placeAutoComplete(document.getElementById("from1")));
+  myMapFlag=true;
+
+      for(var i=0;i<localStorage.length;i++){
+    if(localStorage.key(i)==place.place_id){
+      document.getElementById(place.place_id).setAttribute("shaded",true);
+      document.getElementById(place.place_id).innerHTML='<i class="fa fa-star" style="font-size:18px">';
+    }
+  }
+
+  goBack();   
+   }
+    function photoMaker(place,dLat,dLong) {
+  var photos = place.photos;
+  if(!photos){
+    html_text+='<div class="alert alert-warning" role="alert">No Photos Found</div>';
+    document.getElementById("myTable").innerHTML=html_text;
+    return;
+  }
+  var url=[];
+    for(var i=0;i<10;i++){
+      if(photos[i].getUrl({'maxWidth': 350, 'maxHeight': 300})){
+        url[i]=photos[i].getUrl({'maxWidth': 350, 'maxHeight': 300});
+      }
+      else{
+        break;
+      }
+
+    }
+    //alert(url);
+ html_text=myNavBar();
+
+   html_text+="<table class='table'>";
+   var k=0;
+   for(var i=0;i<3;i++){
+    html_text+="<div class=\"row\">"
+    for(var j=0;j<=3;j++){
+      if(url[k]){
+      html_text+="<div class='column' ><a href="+url[k]+" target='_blank'><img class='img-responsive col-xs-6' src="+url[k]+" alt="+"Broken Img"+"></a></div>";
+      k++;}
+      else{
+        break;
+      }
+    }
+    html_text+="</div>";
+   }
+   html_text+="</table>";
+   // html_text+='<div class="row"><div class="column"><a href='+url[0]+' target="_blank"><img src='+url[0]+' alt="Not Available"></a></div><div class="column"><a href='+url[1]+' target="_blank"><img src='+url[1]+' alt="Not Available"></a></div><div class="column"><a href='+url[2]+' target="_blank"><img src='+url[2]+' alt="Not Available"></a></div><div class="column"><a href='+url[3]+' target="_blank"><img src='+url[3]+' alt="Not Available"></a></div></div><div class="row"><div class="column"><a href='+url[4]+' target="_blank"><img src='+url[4]+' alt="Not Available"></a></div><div class="column"><a href='+url[5]+' target="_blank"><img src='+url[5]+' alt="Not Available"></a></div><div class="column"><a href='+url[6]+' target="_blank"><img src='+url[6]+' alt="Not Available"></a></div><div class="column"><a href='+url[7]+' target="_blank"><img src='+url[7]+' alt="Not Available"></a></div></div><div class="row"><div class="column"><a href='+url[8]+' target="_blank"><img src='+url[8]+' alt="Not Available"></a></div><div class="column"><a href='+url[9]+' target="_blank"><img src='+url[9]+' alt="Not Available"></a></div></div>';
+
+    document.getElementById("myTable").innerHTML=html_text;
+    for(var i=0;i<localStorage.length;i++){
+    if(localStorage.key(i)==place.place_id){
+      document.getElementById(place.place_id).setAttribute("shaded",true);
+      document.getElementById(place.place_id).innerHTML='<i class="fa fa-star" style="font-size:18px">';
+    }
+  }
+  goBack();
+}
+
+
+function myTweet(place){
+      
+
+      var url='https://twitter.com/intent/tweet';
+      var text='Check out '+place.name+' located at '+place.formatted_address+'. Website:'+place.website;
+      var hashtags='TravelAndEntertainmentSearch';
+      var via="userName";
+      window.open(url+"?text="+text+"&hashtags="+hashtags,"","width=500,height=300");
+    } 
+
+
+    function launchDetails(id,i,dLat,dLong){
+     alert(i);
+     GlobRowID=i;
+     GlobLat=dLat;
+     GlobLong=dLong;
+     myID=id;
+  var request = {
+  placeId: id
+};
+
+  var div=document.createElement("div");
+  div.setAttribute("id","map");
+  service = new google.maps.places.PlacesService(div);
+  service.getDetails(request, callback);
+
+function callback(place, status) {
+  myPlaces="";
+  if (status == google.maps.places.PlacesServiceStatus.OK) {
+    myPlaces=place;
+
+    //myPlaces=JSON.stringify(place);
+    console.log(myPlaces);
+  }
+
+    myAddress="",myPhNo="", myRating="", myPage="",myWeb="",myPrice="",openNow="",myPeriods="",myWeekDayText="",offset="";
+  if(myPlaces.formatted_address){
+  myAddress=myPlaces.formatted_address;
+  }
+  if(myPlaces.international_phone_number){
+  myPhNo=myPlaces.international_phone_number;
+  }
+  if(myPlaces.rating){
+    myRating=myPlaces.rating;
+  }
+  if(myPlaces.url){
+    myPage=myPlaces.url;
+  }
+  if(myPlaces.website){
+    myWeb=myPlaces.website;
+  }
+  if(myPlaces.price_level){
+    myPrice=myPlaces.price_level;
+  }
+  if(myPlaces.opening_hours){
+   if(myPlaces.opening_hours.open_now){
+     openNow=myPlaces.opening_hours.open_now;
+
+   }
+  if(myPlaces.opening_hours.periods){
+  myPeriods=myPlaces.opening_hours.periods;}
+  if(myPlaces.opening_hours.weekday_text){
+  myWeekDayText=myPlaces.opening_hours.weekday_text;
+  }
+}
+if(myPlaces.utc_offest){
+  offset=myPlaces.utc_offest;
+}
+  // alert(myPlaces.name);
+ html_text=myNavBar();
+  html_text+="<table class='table table-striped col-xs-12'>";
+  if(myAddress!=""){
+    html_text+="<tr><td>Address</td><td>"+myAddress+"</td></tr>";
+
+  }
+  if(myPhNo!=""){
+    html_text+="<tr><td>Phone Number</td><td>"+myPhNo+"</td></tr>";
+
+  }
+  var dollarPrice="";
+  
+  if(myPrice!=""){
+    for(var i=0;i<myPrice;i++){
+      dollarPrice=dollarPrice+"$";
+  }
+    html_text+="<tr><td>Price Level</td><td>"+dollarPrice+"</td></tr>";
+
+  }
+  if(myRating!=""){
+    html_text+="<tr><td>Rating</td><td>"+myRating+"<div style=\"\" id=\"rateYo\"></div></td></tr>";
+
+  }
+  if(myPage!=""){
+    html_text+="<tr><td>Google Page</td><td><a href="+myPage+" target='_blank' >"+myPage+"</a></td></tr>";
+
+  }
+  if(myWeb!=""){
+    html_text+="<tr><td>Website</td><td><a href="+myWeb+" target='_blank'>"+myWeb+"</a></td></tr>";
+
+  }
+    var strTime="";
+   if(openNow){
+    strTime="Open Now"+moment();
+   }
+   else{
+    strTime="Closed Now";
+   }
+  if(myPeriods!=""){
+
+     html_text+="<tr><td>Hours</td><td>"+strTime+"</td></tr>";
+
+   }
+  document.getElementById("myTable").innerHTML=html_text;
+  callRateYo(myRating);
+  for(var i=0;i<localStorage.length;i++){
+    if(localStorage.key(i)==id){
+      document.getElementById(id).setAttribute("shaded",true);
+      document.getElementById(id).innerHTML='<i class="fa fa-star" style="font-size:18px">';
+    }
+  }
+  goBack();
+}
+    }
+  
+  function reMakeHTML(loc)
+    { 
+      console.log(loc);
+      locString=JSON.stringify(loc);
+      html_text="";
+      var resultsArr=loc.results;
+      myLat=[];
+      myLong=[];
+      var form=document.getElementById("container");
+      document.getElementById("myTable").innerHTML="";
+      //alert(resultsArr);
+      if(!loc.results[0]){
+        html_text+='<div class="alert alert-warning" role="alert">No Records Found</div>';
+        
+        document.getElementById("myTable").innerHTML=html_text;
+      }
+      else{
+      html_text+='<button id="detailButton" disabled="true" type="button" class="btn btn-default btn-sm float-right">Details</span><i class="fa fa-angle-right" style="font-size:36px"></i></button>';
+      html_text+="<table class=\"table\" border=\"1px\">";
+      html_text+="<tr><td>#</td><td>Category</td><td>Name</td><td>Address</td><td>Favorites</td><td>Details</td></tr>";
+      for(i=0;i<resultsArr.length;i++)
+      {
+        currResultObj=resultsArr[i];
+        
+        var keys=Object.keys(currResultObj);
+        for(j=0;j<keys.length;j++){
+          if(keys[j]=="icon"){
+            icon=currResultObj[keys[j]];
+          }
+          if(keys[j]=="name"){
+            name=currResultObj[keys[j]];
+          }
+          if(keys[j]=="vicinity"){
+            vicinity=currResultObj[keys[j]];
+          }
+          if(keys[j]=="place_id"){
+            id1=currResultObj[keys[j]];
+          }
+          
+        }
+        myLat[i]=loc.results[i].geometry.location.lat;
+        myLong[i]=loc.results[i].geometry.location.lng;
+
+        html_text+="<tr id="+i+" ><td>"+(i+1)+"</td><td><image src="+icon+"?></td><td name=\"placeName\" >"+name+"</td><td>"+vicinity+"</td><td shaded=\"false\" id="+id1+" onClick='toggleStar(this.id,myLat["+i+"],myLong["+i+"])'> <i class='fa fa-star-o' style='font-size:18px'></i></td><td id="+id1+" onClick='launchDetails(this.id,"+i+",myLat["+i+"],myLong["+i+"])'><i class='fa fa-angle-right' style='font-size:18px'></i></td> </tr>";
+
+      }
+    html_text+="</table>";
+    html_text+=' <button id="nextButton" type="button" class="btn btn-primary col-md-1 mx-auto">Next</button><button id="prevButton" type="button" onClick="setPreviousPage()" class="btn btn-primary col-md-1 mx-auto">Previous</button>';
+
+    document.getElementById("myTable").innerHTML=html_text;
+    for(var i=0;i<localStorage.length;i++){
+      //alert(document.getElementById(localStorage.key(i)));
+      if(document.getElementById(localStorage.key(i))!==null){
+      document.getElementById(localStorage.key(i)).innerHTML="<i class='fa fa-star' style='font-size:18px'></i>";
+      document.getElementById(localStorage.key(i)).setAttribute("shaded",true);
+    }
+    }
+     document.getElementById("nextButton").onclick=function(){
+    if(myPlacesData[0]==-1 || myPlacesData[1]==-1 ||myPlacesData [2]==-1){
+    if(myPlacesData[pageIndex]==-1){
+      myPlacesData[pageIndex]=loc;
+    }};
+    pageIndex++;
+   
+    stupidFunction(loc); 
+  }
+  // document.getElementById(100).setAttribute("shaded" , false);
+  // alert(document.getElementById(100).getAttribute("shaded"));
+  document.getElementById("resultButton").onclick=function(){
+    FROMWHEREHAVEICOME=true;
+    reMakeHTML(loc);
+    
+  }
+  
+  document.getElementById("favouriteButton").onclick=function(){
+    FROMWHEREHAVEICOME=false;
+    setFavTable();
+  }
+  
+
+  }
+}
+
+  function myRemoveItem(place){
+    if(localStorage.getItem(place)){
+      localStorage.removeItem(place);
+    }
+    setFavTable();
+
+  }
+ function setFavTable(){
+  locations=[];
+  html_text="";
+  document.getElementById("myTable").innerHTML=html_text;
+  html_text+='<button id="detailButton" disabled="true" type="button" class="btn btn-default btn-sm float-right">Details</span><i class="fa fa-angle-right" style="font-size:36px"></i></button>';
+    html_text+="<table class=\"table\" border=\"1px\">";
+     html_text+="<tr><td>#</td><td>Category</td><td>Name</td><td>Address</td><td>Favorites</td><td>Details</td></tr>";
+
+  for ( var i = 0, len = localStorage.length; i < len; ++i ) {
+   location[i]=localStorage.getItem( localStorage.key( i ) ) ;
+   location[i]=JSON.parse(location[i]);
+   html_text+='<tr id='+i+'><td>'+(i+1)+'</td><td><img src='+location[i].icon+' /></td><td>'+location[i].name+'</td><td>'+location[i].vicinity+'</td><td id='+location[i].place_id+' onclick="myRemoveItem(this.id)"><i class="fa fa-trash-o" style="font-size:18px"></i></td><td id='+location[i].place_id+' onclick="launchDetails(this.id,'+i+','+GlobLat2+','+GlobLong2+')"><i class="fa fa-angle-right" style="font-size:36px"></i></td> </tr>';
+
+
+
+}
+
+html_text+='</table>';
+document.getElementById("myTable").innerHTML=html_text;
+
+
+}
+
+function toggleStar(starId,dLat,dLong){
+  // alert(starId);
+  // loc=JSON.parse(loc);
+  // alert(loc);
+  GlobLat2=dLat;
+  GlobLong2=dLong;
+  myID2=starId;
+  var request = {
+  placeId: starId
+};
+
+  var div=document.createElement("div");
+  div.setAttribute("id","map");
+  service = new google.maps.places.PlacesService(div);
+  service.getDetails(request, callback);
+
+  function callback(place, status) {
+  myPlaces2="";
+  if (status == google.maps.places.PlacesServiceStatus.OK) {
+    myPlaces2=place;
+    console.log(myPlaces2);
+    myPlaces2=JSON.stringify(myPlaces2);
+  }
+ // alert(document.getElementById(starId).getAttribute("shaded"));
+  if(document.getElementById(starId).getAttribute("shaded")=="true"){
+   // alert("if");
+    document.getElementById(starId).innerHTML="<i class='fa fa-star-o' style='font-size:18px'></i>";
+     document.getElementById(starId).setAttribute("shaded",false);
+     localStorage.removeItem(starId);
+  }
+  else{
+    document.getElementById(starId).innerHTML="<i class='fa fa-star' style='font-size:18px'></i>";
+    if (typeof(Storage) !== "undefined") {
+      localStorage.setItem(starId,myPlaces2);
+      document.getElementById(starId).setAttribute("shaded",true);
+      
+}
+  };
+}
+}
+// function selectRow(myRowId,id1,dLat,dLong){
+   
+//   if(rowSelectFlag==true){
+//   document.getElementById(myRowId).setAttribute("class","table-warning");
+//   document.getElementById("detailButton").disabled=false;
+
+//   document.getElementById("detailButton").onclick=function(){
+//     launchDetails(id1,dLat,dLong);
+//   };
+// }
+// else{
+//    document.getElementById("detailButton").disabled=true;
+//    document.getElementById(myRowId).setAttribute("class","");
+// }
+//  rowSelectFlag=!rowSelectFlag;
+
+
+// }
+function stupidFunction(loc){
+  //alert(loc);
+    if(loc.next_page_token){
+         $.ajax({
+        url : "/sendData2?pagetoken="+loc.next_page_token,
+        type: "GET",
+        success:function(data,status,xhr){
+          data1 = jQuery.parseJSON(data);
+          reMakeHTML(data1);
+        },
+          error: function(data, status, xhr) {
+        alert("error, status " + status );
+      }
+
+    });
+
+      }
+      else{
+        alert("No Additional Results");
+        pageIndex--;
+      }
+
+    }    
+    function setPreviousPage(){
+      if(pageIndex==0 || pageIndex==-1){
+        alert("This is the first page");
+        return;
+      }
+         pageIndex--;
+         reMakeHTML(myPlacesData[pageIndex]);
+    }  
+
+      function generateHTML(loc)
+    { 
+      console.log(loc);
+      locString=JSON.stringify(loc);
+      html_text="";
+      var resultsArr=loc.results;
+      myLat=[];
+      myLong=[];
+      var form=document.getElementById("container");
+      document.getElementById("myTable").innerHTML="";
+      //alert(resultsArr);
+      if(!loc.results[0]){
+        html_text+='<div class="alert alert-warning" role="alert">No Records Found</div>';
+        
+        document.getElementById("myTable").innerHTML=html_text;
+      }
+      else{
+      html_text+='<button id="detailButton" disabled="true" type="button" class="btn btn-default btn-sm float-right">Details</span><i class="fa fa-angle-right" style="font-size:36px"></i></button>';
+      html_text+="<table class=\"table\" border=\"1px\">";
+      html_text+="<tr><td>#</td><td>Category</td><td>Name</td><td>Address</td><td>Favorites</td><td>Details</td></tr>";
+      for(i=0;i<resultsArr.length;i++)
+      {
+        currResultObj=resultsArr[i];
+        
+        var keys=Object.keys(currResultObj);
+        for(j=0;j<keys.length;j++){
+          if(keys[j]=="icon"){
+            icon=currResultObj[keys[j]];
+          }
+          if(keys[j]=="name"){
+            name=currResultObj[keys[j]];
+          }
+          if(keys[j]=="vicinity"){
+            vicinity=currResultObj[keys[j]];
+          }
+          if(keys[j]=="place_id"){
+            id1=currResultObj[keys[j]];
+          }
+          
+        }
+        myLat[i]=loc.results[i].geometry.location.lat;
+        myLong[i]=loc.results[i].geometry.location.lng;
+
+        html_text+="<tr id="+i+" ><td>"+(i+1)+"</td><td><image src="+icon+"?></td> <td name=\"placeName\" >"+name+"</td> <td >"+vicinity+"</td><td shaded=\"false\" id="+id1+" onClick='toggleStar(this.id,myLat["+i+"],myLong["+i+"])'> <i class='fa fa-star-o' style='font-size:18px'></i></td><td id="+id1+" onClick='launchDetails(this.id,"+i+",myLat["+i+"],myLong["+i+"])'><i class='fa fa-angle-right' style='font-size:18px'></i></td> </tr>";
+
+      }
+    html_text+="</table>";
+    html_text+=' <button id="nextButton" type="button" class="btn btn-primary col-md-1 mx-auto">Next</button><button id="prevButton" type="button" onClick="setPreviousPage()" class="btn btn-primary col-md-1 mx-auto">Previous</button>';
+    document.getElementById("myTable").innerHTML=html_text;
+    document.getElementById("nextButton").onclick=function(){
+    if(myPlacesData[0]==-1 || myPlacesData[1]==-1 ||myPlacesData [2]==-1){
+    if(myPlacesData[pageIndex]==-1){
+      myPlacesData[pageIndex]=loc;
+    }};
+    pageIndex++;
+   
+    stupidFunction(loc); 
+  }
+  // document.getElementById(100).setAttribute("shaded" , false);
+  // alert(document.getElementById(100).getAttribute("shaded"));
+  document.getElementById("resultButton").onclick=function(){
+    FROMWHEREHAVEICOME=true;
+    reMakeHTML(loc);
+    
+  }
+  
+  document.getElementById("favouriteButton").onclick=function(){
+    FROMWHEREHAVEICOME=false;
+    setFavTable();
+  }
+  
+
+
+   
+
+  }
+}
+        function toggleOption(options){
+
+        if(options=="here1"){
+
+        document.getElementById("location1").disabled=true;  
+        document.getElementById("location1").required=false;
+        } else{
+          document.getElementById("location1").disabled=false;
+          document.getElementById("location1").required=true;
+          document.getElementById("search").disabled=false;
+        }
+      }
+
+
+
+
+    </script>
+    <script>
+      function getCurrentLoc() {
+        lat;lon;
+        xmlhttp=new XMLHttpRequest();
+        url="http://ip-api.com/json";
+
+        xmlhttp.open("GET", url, false);
+        xmlhttp.send();
+        var res = JSON.parse(xmlhttp.responseText);
+        
+        if(res){
+          lat = res.lat;
+          lon= res.lon;
+          document.getElementById("search").disabled=false;
+        }
+        document.getElementById("lat").value=lat;
+        document.getElementById("lon").value=lon;
+        for(var i=0;i<localStorage.length;i++){
+          localStorage.removeItem(localStorage.key(i));
+        }
+
+      }
+
+  
+    </script>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <title>Hello, world!</title>
+    <style>
+      #container1{
+        margin-top: 150px;
+        background-color: #E8E8E8;
+      }
+
+    </style>
+  </head>
+  <body onload="getCurrentLoc()">
+   <div id="container1" class="container">
+  
+       
+       <p class="h2">TRAVEL AND ENTERTAINMENT SEARCH</p>
+    
+   
+       
+       <form id="myForm" method="GET">
+  <div class="form-group row">
+    <label for="keyword1" class="col-xs-2 col-form-label">Keyword</label>
+    <div class="col-xs-10">
+      <input type="text" class="form-control" name="keyword" id="keyword1" required="true">
+    </div>
+  </div>
+
+
+  <div class="form-group row">
+    <label for="category1" class="col-xs-2 col-form-label">Category</label>
+     <div class="col-xs-6">
+        <select class="form-control" id="category1" name="category">
+            <option selected="true" value="Default">Default</option>
+            <option  value="airport">Airport</option>
+            <option  value="amusement_park">Amusement Park</option>
+            <option  value="aquarium">Aquarium</option>
+            <option  value="art_gallery">Art Gallery</option>
+            <option  value="bakery">Bakery</option>
+            <option  value="bar">Bar</option>
+            <option  value="beauty_salon">Beauty Salon</option>
+            <option  value="bowling_alley">Bowling Alley</option>
+            <option  value="bus_station">Bus Station</option>
+            <option  value="cafe">Cafe</option>
+            <option  value="campground">Campground</option>
+            <option  value="car_rental">Car Rental</option>
+            <option  value="casino">Casino</option>
+            <option  value="lodging">Lodging</option>
+            <option  value="movie_theater">Movie Theater</option>
+            <option  value="museum">Museum</option>
+            <option  value="night_club"NightClub</option>
+            <option  value="park">Park</option>
+            <option  value="parking">Parking</option>
+            <option  value="restaurant">Restaurant</option>
+            <option  value="shopping_mall">Shopping Mall</option>
+            <option  value="stadium">Stadium</option>
+            <option  value="subway_station">Subway Station</option>
+            <option  value="taxi_stand">Taxi Stand</option>
+            <option  value="train_station">Train Station</option>
+            <option  value="transit_station">Transit Station</option>
+            <option  value="travel_agency">Travel Agency</option>
+            <option  value="zoo">Zoo</option>
+        </select>
+    </div>
+  </div>
+
+
+  <div class="form-group row">
+    <label for="distance1" class="col-xs-2 col-form-label">Distance</label>
+    <div class="col-xs-6">
+      <input type="text" class="form-control" name="distance" id="distance1" placeholder="10 miles">
+    </div>
+  </div>
+
+
+  <fieldset class="form-group">
+    <div class="row">
+      <legend class="col-form-label col-xs-2 pt-0">From</legend>
+      <div class="col-xs-10">
+        <div class="radio">
+          <input type="radio" name="locRadio" id="here1" value="here1" onchange="toggleOption('here1');" checked>
+           <label for="here1" class="col-form-label">Here</label>
+        </div>
+        <div class="radio">
+          <input  type="radio" name="locRadio" id="customLocation1" value="customLocation1" onchange="toggleOption('customLocation1');">
+           <label for="distance1" class="col-form-label">Other,Please Specify:</label>
+           <div class="col-xs-6">
+          <input class="form-control" type="text" name="location" id="location1" 
+                  placeholder="Enter a Location" onkeypress="placeAutoComplete(document.getElementById('location1'))" disabled="true">
+          </div>
+        </div>
+      </div>
+    </div>
+  </fieldset>
+        <input type="hidden" id="lat" name="lat" >
+        <input type="hidden" id="lon" name="lon" >
+  <div class="form-group row">
+    <div class="col-xs-10">
+      <button  type="button" id="search" class="btn btn-primary glyphicon glyphicon-search" disabled="true">Search</button> 
+      <input class="btn btn-primary" type="reset" value="Clear">
+    </div>
+
+  </div>
+</form>
+
+ 
+  
+   </div>
+   <div class="col-xs-4 text-center">
+    <button id="resultButton" type="button" class="btn btn-primary col-xs-6 mx-auto">Results</button>
+    <button id="favouriteButton" type="button" class="btn btn-primary col-xs-6 mx-auto">Favourites</button>
+  </div>
+
+   <div class="container col-xs-12 table-responsive" id="myTable">
+    
+  </div>
+  
+ 
+  <script>
+    $("#search").click(function(event){ 
+    var myKeyword=$("#keyword1").val();
+
+    myNewKeyword=myKeyword.trim();
+    myKeyword=myKeyword.split(' ').join('+');
+    
+    if(myNewKeyword.length==0){
+     // alert("here");
+      document.getElementById("keyword1").value=myNewKeyword;
+       $("#search").click(function(){});
+      return;
+    }
+
+
+       //alert(myKeyword);
+    var myDistance=$("#distance1").val();
+    var myCategory=$("#category1").val();
+    var myLocation=$("#location1").val();
+    if(document.getElementById("customLocation1").checked==true){
+      myNewLocation=myLocation.trim();
+      if(myNewLocation==""){
+        document.getElementById("location1").value=myNewLocation;
+       $("#search").click(function(){});
+      return;
+
+      }
+    }
+    myLocation=myLocation.split(' ').join('+');
+
+    if(myLocation==""){
+      myLocation=0;
+    }
+   // alert(myLocation);
+    if(myDistance==""){
+      myDistance=10;
+    }
+
+    myPlacesData[0]=-1;
+    myPlacesData[1]=-1;
+    myPlacesData[2]=-1;
+    pageIndex=0;
+
+    var myLat=lat;
+    var myLong=lon;
+
+    $.ajax({
+        url : "/sendData?keyword="+myKeyword+"&distance="+myDistance+"&category="+myCategory+"&location="+myLocation+"&lat="+myLat+"&lon="+myLong,
+        type: "GET",
+        success:function(data,status,xhr){
+          data1 = jQuery.parseJSON(data);
+          html_text="";
+          html_text+='<div class="progress"><div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width: 50%"></div></div>';
+          document.getElementById("myTable").innerHTML=html_text;
+          //setTimeOut(function(){},1000);
+          generateHTML(data1);
+          reMakeHTML(data1);
+        },
+          error: function(data, status, xhr) {
+        alert("error, status " + status );
+      }
+
+    })
+});
+
+
+   </script>   
+ 
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+
+  </body>
+</html>
